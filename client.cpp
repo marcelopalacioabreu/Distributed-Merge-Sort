@@ -77,11 +77,9 @@ int main(int argc, char *argv[]) {
 	}
 
 	data = mergesort(data);
-	std::cout << "SORTED: " << std::is_sorted(data.begin(), data.end()) << std::endl;
 	for (int i = 0; i < data.size(); i++) {
 		int tmp = htonl(data[i]);
 		send(sockfd, &tmp, sizeof(int), 0);
-		std::cout << data[i] << std::endl;
 	}
 
 	close(sockfd);

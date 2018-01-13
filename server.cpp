@@ -170,6 +170,19 @@ int main(int argc, char *argv[]) {
 			}
 		}
 	}	
+	
+	std::vector<int> merged = kMerge(unmerged);
+
+	auto finish = std::chrono::high_resolution_clock::now();
+	
+  std::cout << std::endl << std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start).count() << std::endl;
+	
+	std::cout << std::endl << "Is sorted: " << isSorted(merged) << std::endl;
+
+	return 0;
+}
+
+std::vector<int> kMerge(std::vector<std::queue<int>> &unmerged) {
 	std::vector<int> merged;
 	std::priority_queue<std::pair<int,int>, std::vector<std::pair<int,int>>, std::greater<std::pair<int,int>> > min_heap;
 
@@ -188,14 +201,7 @@ int main(int argc, char *argv[]) {
 			min_heap.push(new_val_index);
 		}
 	}
-
-	auto finish = std::chrono::high_resolution_clock::now();
-	
-  std::cout << std::endl << std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start).count() << std::endl;
-	
-	std::cout << std::endl << "Is sorted: " << isSorted(merged) << std::endl;
-
-	return 0;
+	return merged;
 }
 
 bool isSorted(const std::vector<int> &vec) {
