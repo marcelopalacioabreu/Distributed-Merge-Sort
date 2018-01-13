@@ -73,16 +73,44 @@ int main(int argc, char *argv[]) {
 		tmp = ntohs(tmp);
 		std::cout << tmp << std::endl;
 		data.push_back(tmp);
-	}	
+	}
+
+	data = mergesort(data);
+	std::cout << std::endl;
+	for (int i = 0; i < data.size(); i++) {
+		int tmp = htons(data[i]);
+		send(sockfd, &tmp, sizeof(int), 0);
+	}
 
 	close(sockfd);
 	return 0;
 }
 
-void mergesort(vector<int> arr) {
-
+std::vector<int> mergesort(std::vector<int> arr) {
+	if(arr.size() == 1) {
+		return arr;
+	}
+	std::vector<int> left(arr.begin(), arr.begin() + arr.size()/2);
+	std::vector<int> right(arr.begin() + arr.size()/2, arr.end());
+	left = mergesort(left);
+	right = mergesort(right);
+	return merge(left, right);
 }
 
-void merge(vector<int> arr) {
+std::vector<int> merge(std::vector<int> left, std::vector<int> right) {
+	std::vector<int> merged;
+	int j = 0;
+	for (int i = 0; i < left.size(); i++) {
+		while (j < right.size() && right[j] < left[i]) {
+			merged.push_back(right[j]);
+			j++;
+		}
+		merged.push_back(left[i]);
+	}
 
+	while (j < right.size()) {
+		merged.push_back(right[j]);
+		j++;
+	}
+	return merged;
 }

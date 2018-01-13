@@ -11,6 +11,7 @@
 #include <netdb.h>
 #include <vector>
 #include <algorithm>
+#include <functional>
 
 #define PORT "2018"
 #define MAXDATASIZE 100
@@ -86,8 +87,11 @@ int main(int argc, char *argv[]) {
 	
 	int max_sd = sockfd;
 	std::vector<int> clients;
-
-	while (true) {
+	
+	std::vector<std::vector<int>> unmerged;
+	
+	int num_sorted = 0;
+	while (num_sorted < data.size()) {
 		FD_ZERO(&readfds);
 		FD_SET(sockfd, &readfds);
 		max_sd = sockfd;
@@ -142,7 +146,27 @@ int main(int argc, char *argv[]) {
 				}
 			}
 		}	
-	}		
+
+		for (int i = 0; i < clients.size(); i++) {
+			if (unmerged.size() <= i) {
+				std::vector<int> tmp;
+				unmerged.push_back(tmp);
+			}
+			if (FD_ISSET(clients[i], &readfds)) {
+				int value;
+				int numbytes = recv(clients[i], &value, sizeof(int), 0);
+				if (numbytes == 0) {
+					std::cout << "client disconnected" << std::endl;
+					return 1;
+				}
+				value = ntohs(value);
+				unmerged[i].push_back(value);
+				num_sorted++;
+			}
+		}
+	}	
+
+	vector<int> merged;
 
 	return 0;
 }
