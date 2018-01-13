@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
 		std::cout << "connection closed" << std::endl;
 		return 0;
 	}  
-	chunk_size = ntohs(chunk_size);
+	chunk_size = ntohl(chunk_size);
 	std::cout << "Chunk size: " << chunk_size << std::endl;
 
 	for (int i = 0; i < chunk_size; i++) {
@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
 			std::cout << "connection close" << std::endl;
 			return 0;
 		}
-		tmp = ntohs(tmp);
+		tmp = ntohl(tmp);
 		std::cout << tmp << std::endl;
 		data.push_back(tmp);
 	}
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
 	data = mergesort(data);
 	std::cout << std::endl;
 	for (int i = 0; i < data.size(); i++) {
-		int tmp = htons(data[i]);
+		int tmp = htonl(data[i]);
 		send(sockfd, &tmp, sizeof(int), 0);
 	}
 

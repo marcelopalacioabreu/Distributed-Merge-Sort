@@ -104,6 +104,10 @@ int main(int argc, char *argv[]) {
 			if (sd > max_sd) {
 				max_sd = sd;
 			}
+			if (unmerged.size() <= i) {
+				std::queue<int> tmp;
+				unmerged.push_back(tmp);
+			}
 		}
 		
 		int activity = select(max_sd + 1, &readfds, NULL, NULL, NULL);
@@ -136,36 +140,36 @@ int main(int argc, char *argv[]) {
 					}
 					
 					std::cout<<"SIZE: " << num_per_client << std::endl;
-					int size = htons(num_per_client);
+					int size = htonl(num_per_client);
 					send(clients[i], &size, sizeof(int), 0); 
 					
 					int begin = i * (data.size()/clients.size());
 					for (int j = begin; j < begin + num_per_client; j++) {
-						int value = htons(data[j]);
+						int value = htonl(data[j]);
 						send(clients[i], &value, sizeof(int), 0);
 					}
 				}
 			}
 		}	
-
+		std::vector<int> clients_tmp;	
 		for (int i = 0; i < clients.size(); i++) {
-			if (unmerged.size() <= i) {
-				std::queue<int> tmp;
-				unmerged.push_back(tmp);
-			}
+			
 			if (FD_ISSET(clients[i], &readfds)) {
 				int value;
 				int numbytes = recv(clients[i], &value, sizeof(int), 0);
 				if (numbytes == 0) {
 					std::cout << "client disconnected" << std::endl;
+					continue;
 				}
-				value = ntohs(value);
+				value = ntohl(value);
 				unmerged[i].push(value);
+				std::cout << "Val: " << value << std::endl;
 				num_sorted++;
 			}
+			clients_tmp.push_back(clients[i]);
 		}
+		clients = clients_tmp;
 	}	
-
 	std::vector<int> merged;
 	std::priority_queue<std::pair<int,int>, std::vector<std::pair<int,int>>, std::greater<std::pair<int,int>> > min_heap;
 
@@ -177,13 +181,16 @@ int main(int argc, char *argv[]) {
 	//k-way merge
 	while (!min_heap.empty()) {
 		std::pair<int,int> val_index = min_heap.top(); min_heap.pop();
+		std::cout << val_index.first << ", "; 
 		merged.push_back(val_index.first);
 		if (!unmerged[val_index.second].empty()) {
 			std::pair<int,int> new_val_index (unmerged[val_index.second].front(), val_index.second); 
 			unmerged[val_index.second].pop();
+			min_heap.push(new_val_index);
 		}
 	}
-	std::cout << "Is sorted: " << std::is_sorted(merged.begin(), merged.end()) << std::endl;
+	std::cout << std::endl << "Is sorted: " << std::is_sorted(merged.begin(), merged.end()) << std::endl;
+
 	return 0;
 }
 
