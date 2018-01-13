@@ -8,6 +8,8 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <vector>
+#include <algorithm>
+
 #define PORT "2018"
 
 #define MAXDATASIZE 100
@@ -71,15 +73,15 @@ int main(int argc, char *argv[]) {
 			return 0;
 		}
 		tmp = ntohl(tmp);
-		std::cout << tmp << std::endl;
 		data.push_back(tmp);
 	}
 
 	data = mergesort(data);
-	std::cout << std::endl;
+	std::cout << "SORTED: " << std::is_sorted(data.begin(), data.end()) << std::endl;
 	for (int i = 0; i < data.size(); i++) {
 		int tmp = htonl(data[i]);
 		send(sockfd, &tmp, sizeof(int), 0);
+		std::cout << data[i] << std::endl;
 	}
 
 	close(sockfd);

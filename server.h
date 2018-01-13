@@ -1,7 +1,7 @@
 #ifndef SERVER_H
 #define SERVER_H
-#include<string>
+#include<vector>
 
-std::string get_input();
+bool isSorted(const std::vector<int> &vec);
 
 #endif

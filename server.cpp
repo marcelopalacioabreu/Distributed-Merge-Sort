@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <netinet/in.h>
+#include <chrono>
 #include <netdb.h>
 #include <vector>
 #include <queue>
@@ -26,7 +27,8 @@ int main(int argc, char *argv[]) {
 	int yes = 1;
 	socklen_t sin_size;
 	char buf[MAXDATASIZE];
-	
+	std::chrono::time_point<std::chrono::high_resolution_clock> start;
+
 	if (argc != 2) {
 		std::cout << "Enter data filename" << std::endl;
 		return 1;
@@ -42,7 +44,8 @@ int main(int argc, char *argv[]) {
 		datafile.close();
 	}
 	std::cout << data.size() << " integers loaded." << std::endl;
-
+	
+	
 	fd_set readfds;
 
 	memset(&hints, 0, sizeof hints);
@@ -130,7 +133,7 @@ int main(int argc, char *argv[]) {
 			std::cin >> input;
 
 			if (input == "y") {
-				std::cout << "SEND" << std::endl;
+				start = std::chrono::high_resolution_clock::now();
 				int num_per_client = data.size()/clients.size();
 				
 				std::cout << "Num clients: " << clients.size() << std::endl;		
@@ -151,24 +154,21 @@ int main(int argc, char *argv[]) {
 				}
 			}
 		}	
-		std::vector<int> clients_tmp;	
+		
 		for (int i = 0; i < clients.size(); i++) {
-			
-			if (FD_ISSET(clients[i], &readfds)) {
+			if (clients[i] >= 0 && FD_ISSET(clients[i], &readfds)) {
 				int value;
 				int numbytes = recv(clients[i], &value, sizeof(int), 0);
 				if (numbytes == 0) {
 					std::cout << "client disconnected" << std::endl;
+					clients[i] = -1;
 					continue;
 				}
 				value = ntohl(value);
 				unmerged[i].push(value);
-				std::cout << "Val: " << value << std::endl;
 				num_sorted++;
 			}
-			clients_tmp.push_back(clients[i]);
 		}
-		clients = clients_tmp;
 	}	
 	std::vector<int> merged;
 	std::priority_queue<std::pair<int,int>, std::vector<std::pair<int,int>>, std::greater<std::pair<int,int>> > min_heap;
@@ -181,7 +181,6 @@ int main(int argc, char *argv[]) {
 	//k-way merge
 	while (!min_heap.empty()) {
 		std::pair<int,int> val_index = min_heap.top(); min_heap.pop();
-		std::cout << val_index.first << ", "; 
 		merged.push_back(val_index.first);
 		if (!unmerged[val_index.second].empty()) {
 			std::pair<int,int> new_val_index (unmerged[val_index.second].front(), val_index.second); 
@@ -189,8 +188,23 @@ int main(int argc, char *argv[]) {
 			min_heap.push(new_val_index);
 		}
 	}
-	std::cout << std::endl << "Is sorted: " << std::is_sorted(merged.begin(), merged.end()) << std::endl;
+
+	auto finish = std::chrono::high_resolution_clock::now();
+	
+  std::cout << std::endl << std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start).count() << std::endl;
+	
+	std::cout << std::endl << "Is sorted: " << isSorted(merged) << std::endl;
 
 	return 0;
 }
 
+bool isSorted(const std::vector<int> &vec) {
+	std::cout << "SIZE: " << vec.size() << std::endl;
+	for (int i = 0; i < vec.size()-1; i++) {
+		if (vec[i] > vec[i+1]) {
+			std::cout << i << "," << vec[i] << "," << vec[i+1] << std::endl;
+			return false;
+		}
+	}
+	return true;
+}
