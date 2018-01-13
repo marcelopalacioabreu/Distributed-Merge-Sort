@@ -10,6 +10,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <vector>
+#include <queue>
 #include <algorithm>
 #include <functional>
 
@@ -88,7 +89,7 @@ int main(int argc, char *argv[]) {
 	int max_sd = sockfd;
 	std::vector<int> clients;
 	
-	std::vector<std::vector<int>> unmerged;
+	std::vector<std::queue<int>> unmerged;
 	
 	int num_sorted = 0;
 	while (num_sorted < data.size()) {
@@ -149,7 +150,7 @@ int main(int argc, char *argv[]) {
 
 		for (int i = 0; i < clients.size(); i++) {
 			if (unmerged.size() <= i) {
-				std::vector<int> tmp;
+				std::queue<int> tmp;
 				unmerged.push_back(tmp);
 			}
 			if (FD_ISSET(clients[i], &readfds)) {
@@ -157,17 +158,32 @@ int main(int argc, char *argv[]) {
 				int numbytes = recv(clients[i], &value, sizeof(int), 0);
 				if (numbytes == 0) {
 					std::cout << "client disconnected" << std::endl;
-					return 1;
 				}
 				value = ntohs(value);
-				unmerged[i].push_back(value);
+				unmerged[i].push(value);
 				num_sorted++;
 			}
 		}
 	}	
 
-	vector<int> merged;
+	std::vector<int> merged;
+	std::priority_queue<std::pair<int,int>, std::vector<std::pair<int,int>>, std::greater<std::pair<int,int>> > min_heap;
 
+	for (int i = 0; i < unmerged.size(); i++) {
+		std::pair<int,int> val_index (unmerged[i].front(), i); unmerged[i].pop();
+		min_heap.push(val_index);
+	}
+
+	//k-way merge
+	while (!min_heap.empty()) {
+		std::pair<int,int> val_index = min_heap.top(); min_heap.pop();
+		merged.push_back(val_index.first);
+		if (!unmerged[val_index.second].empty()) {
+			std::pair<int,int> new_val_index (unmerged[val_index.second].front(), val_index.second); 
+			unmerged[val_index.second].pop();
+		}
+	}
+	std::cout << "Is sorted: " << std::is_sorted(merged.begin(), merged.end()) << std::endl;
 	return 0;
 }
 
